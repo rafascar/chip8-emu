@@ -1,7 +1,10 @@
 #include <stdlib.h>
 
+/* screen dimensions */
 #define WIDTH   64
 #define HEIGHT  32
+/* callstack definitions */
+#define LEVELS  12
 
 /* 4K byte-addressable memory */
 uint8_t memory[0xFFF];
@@ -14,4 +17,12 @@ uint16_t reg_I;
 uint16_t reg_PC;
 
 /* 64x32 monochrome framebuffer */
-uint8_t frame_buffer[64*32];
+uint8_t frame_buffer[WIDTH*HEIGHT];
+
+/* 12 levels call stack and stack pointer */
+uint16_t stack[LEVELS];
+uint16_t sp;
+
+void     stack_init();
+void     stack_push(uint16_t address);
+uint16_t stack_pop();

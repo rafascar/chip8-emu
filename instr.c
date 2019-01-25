@@ -13,7 +13,13 @@
 
 /* 00E0     Clear the screen.
  */
-void op_00E0(uint16_t instr) {
+void op_00E0(uint16_t opcode) {
     int screen_size = WIDTH * HEIGHT;
     memset(frame_buffer, 0, screen_size);
+}
+
+/* 00EE     Return from a subroutine.
+ */
+void op_00EE(uint16_t opcode) {
+    reg_PC = stack_pop();
 }

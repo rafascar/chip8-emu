@@ -14,6 +14,7 @@ void cpu_reset(FILE *file) {
     memset(reg, 0, sizeof(reg));    /* reset all data registers */
     reg_I = 0;                      /* reset address register */
     reg_PC = 0x200;                 /* programs start at 0x200 */
+    stack_init();                   /* reset stack */
 
     /* load image file to memory */
     uint8_t *p = &memory[reg_PC];      
@@ -36,10 +37,10 @@ int main(int argc, char **argv) {
     cpu_reset(file);
     fclose(file);
 
-
     /* begin emulation loop */
     int running = 1;
-    while (running) {
+    //while (running) { 
+    while (running--) {     /* debugging */
         /* Fetch opcode.
          * CHIP-8 opcodes are 2-bytes, but it has a byte-addressable memory
          * thus, we need to get two consecutive bytes to fech a single 
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
                         op_00E0(opcode);
                         break;
                     case 0xE:
+                        op_00EE(opcode);
                         break;
                     default:
                         fprintf(stderr, "chip8: invalid opcode\n");
