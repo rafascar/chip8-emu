@@ -70,18 +70,23 @@ int main(int argc, char **argv) {
                 break;
             /* 1NNN */
             case 0x1000:
+                op_1NNN(opcode);
                 break;
             /* 2NNN */
             case 0x2000:
+                op_2NNN(opcode);
                 break;
             /* 3XNN */
             case 0x3000:
+                op_3XNN(opcode);
                 break;
             /* 4XNN */
             case 0x4000:
+                op_4XNN(opcode);
                 break;
             /* 5XY0 */
             case 0x5000:
+                op_5XY0(opcode);
                 break;
             /* 6XNN */
             case 0x6000:
