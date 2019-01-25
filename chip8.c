@@ -4,15 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* 4K byte-addressable memory */
-uint8_t memory[0xFFF];
-
-/* 16 8-bit data registers V0 to VF */
-uint8_t reg[16];
-/* 16-bit address register I */
-uint16_t reg_I;
-/* 16-bit program counter PC */
-uint16_t reg_PC;
+#include "chip8.h"
+#include "instr.h"
 
 /* TODO: stack */
 
@@ -28,8 +21,6 @@ void cpu_reset(FILE *file) {
     fread(p, sizeof(uint8_t), max_read, file);
 }
     
-
-
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: ./chip8 file\n");
@@ -49,26 +40,28 @@ int main(int argc, char **argv) {
     /* begin emulation loop */
     int running = 1;
     while (running) {
-        /* Fetch instruction.
-         * CHIP-8 instructions are 2-bytes, but it has a byte-addressable memory
+        /* Fetch opcode.
+         * CHIP-8 opcodes are 2-bytes, but it has a byte-addressable memory
          * thus, we need to get two consecutive bytes to fech a single 
-         * instruction, hence the PC register is incremented twice. 
-         * Instructions are big-endian; so the most significant bits are shifted
-         * left and OR'd with the least significant to obtain the full instr. */
-        uint16_t instr = (uint16_t)memory[reg_PC] << 8 | memory[reg_PC+1];  
+         * opcode, hence the PC register is incremented twice. 
+         * Opcodes are big-endian; so the most significant bits are shifted
+         * left and OR'd with the least significant to obtain the full opcode. */
+        uint16_t opcode = (uint16_t)memory[reg_PC] << 8 | memory[reg_PC+1];  
         reg_PC = reg_PC + 2;
         /* The first hexadecimal digit of an opcode dictates which instruction 
          * needs to be executed; in some cases, the last hex digit is also 
          * needed. */
-        switch (instr & 0xF000) {
+        switch (opcode & 0xF000) {
             /* 0NNN (not implemented), 00E0, 00EE */
             case 0x0000:
-                switch (instr & 0x000F) {
+                switch (opcode & 0x000F) {
                     case 0x0:
+                        op_00E0(opcode);
                         break;
                     case 0xE:
                         break;
                     default:
+                        fprintf(stderr, "chip8: invalid opcode\n");
                         abort();
                         break;
                 }
@@ -96,7 +89,7 @@ int main(int argc, char **argv) {
                 break;
             /* 8XY0, 8XY1, 8XY2, 8XY3, 8XY4, 8XY5, 8XY6, 8XY7, 8XYE */
             case 0x8000:
-                switch (instr & 0x000F) {
+                switch (opcode & 0x000F) {
                     case 0x0:
                         break;
                     case 0x1:
@@ -138,20 +131,20 @@ int main(int argc, char **argv) {
                 break;
             /* EX9E, EXA1 */
             case 0xE000:
-                switch (instr & 0x000F) {
+                switch (opcode & 0x000F) {
                     case 0xE:
                         break;
                     case 0x1:
                         break;
                     default:
-                        fprintf(stderr, "chip8: invalid opcode");
+                        fprintf(stderr, "chip8: invalid opcode\n");
                         abort();
                         break;
                 }
                 break;
             /* FX07, FX0A, FX18, FX1E, FX29, FX33, FX15, FX55, FX65 */
             case 0xF000:
-                switch (instr & 0x000F) {
+                switch (opcode & 0x000F) {
                     case 0x0007:
                         break;
                     case 0x000A:
@@ -165,7 +158,7 @@ int main(int argc, char **argv) {
                     case 0x0003:
                         break;
                     case 0x0005:
-                        switch (instr & 0x00F0) {
+                        switch (opcode & 0x00F0) {
                             case 0x0010:
                                 break;
                             case 0x0050:
@@ -173,18 +166,18 @@ int main(int argc, char **argv) {
                             case 0x0060:
                                 break;
                             default:
-                                fprintf(stderr, "chip8: invalid opcode");
+                                fprintf(stderr, "chip8: invalid opcode\n");
                                 abort();
                                 break;
                         }
                     default:
-                        fprintf(stderr, "chip8: invalid opcode");
+                        fprintf(stderr, "chip8: invalid opcode\n");
                         abort();
                         break;
                 }
                 break;
             default:
-                fprintf(stderr, "chip8: invalid opcode");
+                fprintf(stderr, "chip8: invalid opcode\n");
                 abort();
                 break;
         }
@@ -192,4 +185,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
