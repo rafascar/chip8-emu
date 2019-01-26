@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "chip8.h"
 #include "instr.h"
@@ -15,6 +16,8 @@ void cpu_reset(FILE *file) {
     reg_I = 0;                      /* reset address register */
     reg_PC = 0x200;                 /* programs start at 0x200 */
     stack_init();                   /* reset stack */
+
+    srand(time(NULL));               /* set random seed for rng */
 
     /* load image file to memory */
     uint8_t *p = &memory[reg_PC];      
@@ -106,15 +109,19 @@ int main(int argc, char **argv) {
                 break;
             /* 9XY0 */
             case 0x9000:
+                op_9XY0(opcode);
                 break;
             /* ANNN */
             case 0xA000:
+                op_ANNN(opcode);
                 break;
             /* BNNN */
             case 0xB000:
+                op_BNNN(opcode);
                 break;
             /* CXNN */
             case 0xC000:
+                op_CXNN(opcode);
                 break;
             /* DXYN */
             case 0xD000:

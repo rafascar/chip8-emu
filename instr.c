@@ -188,3 +188,43 @@ void op_8XYN(uint16_t opcode) {
             break;
     }
 }
+
+/* 9XY0     Skip the following instruction if the value of register 
+ *          VX is not equal to the value of register VY.
+ */
+void op_9XY0(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    uint8_t y  = (opcode & 0x00F0) >> 4;
+
+    uint8_t vx = reg[x];
+    uint8_t vy = reg[y];
+    if (vx != vy)   
+        reg_PC = reg_PC + 2;
+}
+
+/* ANNN     Store memory address NNN in register I.
+ */
+void op_ANNN(uint16_t opcode) {
+    uint16_t nnn = opcode & 0x0FFF;
+    reg_I = nnn;
+}
+
+/* BNNN     Jump to address NNN + V0.
+ */
+void op_BNNN(uint16_t opcode) {
+    uint16_t nnn = opcode & 0x0FFF;
+    reg_PC = nnn + reg[0];
+}
+
+/* CXNN     Set VX to a random number with a mask of NN.
+ */
+void op_CXNN(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    uint8_t nn = opcode & 0x00FF;
+
+    /* It generated a random number between 00 and FF; it then logical
+     * ANDs this value with a byte mask in order to reduce the size of
+     * the set of random numbers capable of being returned from this func. */
+    reg[x] = (uint8_t)(rand() % 0xFF) & nn;
+    print_registers();
+}
