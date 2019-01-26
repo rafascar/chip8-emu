@@ -14,5 +14,4 @@ void op_9XY0(uint16_t opcode);
 void op_ANNN(uint16_t opcode);
 void op_BNNN(uint16_t opcode);
 void op_CXNN(uint16_t opcode);
-
-
+void op_DXYN(uint16_t opcode);

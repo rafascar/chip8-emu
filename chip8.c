@@ -7,8 +7,7 @@
 
 #include "chip8.h"
 #include "instr.h"
-
-/* TODO: stack */
+#include "digits.h"
 
 /* Reset CPU registers and load image file to memory */
 void cpu_reset(FILE *file) {
@@ -18,6 +17,11 @@ void cpu_reset(FILE *file) {
     stack_init();                   /* reset stack */
 
     srand(time(NULL));               /* set random seed for rng */
+
+    /* All hexadecimal digits (0 - 9, A - F) have corresponding sprite 
+     * data already stored in the memory of the interpreter.
+     * We chose to store it beggining in address 0x000. */
+    memcpy(memory, digits, sizeof(digits));
 
     /* load image file to memory */
     uint8_t *p = &memory[reg_PC];      
@@ -46,7 +50,7 @@ int main(int argc, char **argv) {
     fclose(file);
 
     /* begin emulation loop */
-    int running = 3;
+    int running = 1;
     //while (running) { 
     while (running--) {     /* debugging */
         /* Fetch opcode.
@@ -125,6 +129,7 @@ int main(int argc, char **argv) {
                 break;
             /* DXYN */
             case 0xD000:
+                op_DXYN(opcode);
                 break;
             /* EX9E, EXA1 */
             case 0xE000:

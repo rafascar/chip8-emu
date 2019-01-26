@@ -228,3 +228,59 @@ void op_CXNN(uint16_t opcode) {
     reg[x] = (uint8_t)(rand() % 0xFF) & nn;
     print_registers();
 }
+
+/* Helper functions to draw on screen */
+
+/* XOR pixel at screen position (x,y) with pixel p;
+ * return the XOR'd pixel.
+ */
+uint8_t xor_pixel(uint8_t x, uint8_t y, uint8_t p) {
+    return frame_buffer[x + WIDTH * y] ^= p;
+}
+
+/* Return pixel at screen position (x,y). */
+uint8_t get_pixel(uint8_t x, uint8_t y) {
+    return frame_buffer[x + WIDTH * y];
+}
+
+/* DYXN     Draw a sprite at position VX, VY with N bytes of sprite 
+ *          data starting at the address stored in I 
+ *          Set VF to 01 if any set pixels are changed to unset, 
+ *          and 00 otherwise.
+ */
+void op_DXYN(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
+    uint8_t n = opcode & 0x000F;
+
+    /* (x, y) positions to draw the sprite. */
+    uint8_t vx = reg[x];
+    uint8_t vy = reg[y];
+    /* original x position */
+    uint8_t ox = vx;
+
+    /* Reset register VF before drawing the sprite. If any pixel set
+     * pixel is unset, VF will become 1; it will stay 0 otherwise. */
+    reg[0xF] = 0x00;
+
+    /* The sprite pixels are XOR'd with those of the screen. */
+    int i;
+    for (i = 0; i < n; i++) {
+        /* Each line has 1 byte and is at the address pointed by
+         * the register I. */
+        uint8_t line = memory[reg_I + i];
+        /* Use a mask to extract each individual pixel of the
+         * 8-bit line and shift accordingly to isolate the bit. */
+        uint8_t mask, shift;
+        for (mask = 0x80, shift = 7; mask > 0; mask >>= 1, shift--) {
+            uint8_t old = get_pixel(vx, vy);
+            uint8_t new = xor_pixel(vx++, vy, (line & mask) >> shift);
+            /* Set VF register to 1 if the pixel was flipped from set (1)
+             * to unset (0). */
+            if (old == 1 && new == 0) reg[0xF] = 0x01;
+        }
+        /* Next line: reset x position and advance y position */ 
+        vx = ox; vy++; 
+    }
+    print_screen();
+}

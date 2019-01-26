@@ -3,6 +3,7 @@
 /* screen dimensions */
 #define WIDTH   64
 #define HEIGHT  32
+
 /* callstack definitions */
 #define LEVELS  12
 
@@ -28,3 +29,4 @@ void     stack_push(uint16_t address);
 uint16_t stack_pop();
 
 void invalid_opcode(uint16_t opcode);
+
