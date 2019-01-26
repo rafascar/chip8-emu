@@ -21,6 +21,11 @@ void cpu_reset(FILE *file) {
     int max_read = 0xFFF - 0x200;    /* maximum file size */
     fread(p, sizeof(uint8_t), max_read, file);
 }
+
+void invalid_opcode(uint16_t opcode) {
+    fprintf(stderr, "chip8: invalid opcode %04x\n", opcode);
+    abort();
+}
     
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -38,7 +43,7 @@ int main(int argc, char **argv) {
     fclose(file);
 
     /* begin emulation loop */
-    int running = 1;
+    int running = 3;
     //while (running) { 
     while (running--) {     /* debugging */
         /* Fetch opcode.
@@ -63,8 +68,7 @@ int main(int argc, char **argv) {
                         op_00EE(opcode);
                         break;
                     default:
-                        fprintf(stderr, "chip8: invalid opcode\n");
-                        abort();
+                        invalid_opcode(opcode);
                         break;
                 }
                 break;
@@ -90,36 +94,15 @@ int main(int argc, char **argv) {
                 break;
             /* 6XNN */
             case 0x6000:
+                op_6XNN(opcode);
                 break;
             /* 7XNN */
             case 0x7000:
+                op_7XNN(opcode);
                 break;
-            /* 8XY0, 8XY1, 8XY2, 8XY3, 8XY4, 8XY5, 8XY6, 8XY7, 8XYE */
+            /* 8XYN - 8XY0, 8XY1, 8XY2, 8XY3, 8XY4, 8XY5, 8XY6, 8XY7, 8XYE */
             case 0x8000:
-                switch (opcode & 0x000F) {
-                    case 0x0:
-                        break;
-                    case 0x1:
-                        break;
-                    case 0x2:
-                        break;
-                    case 0x3:
-                        break;
-                    case 0x4:
-                        break;
-                    case 0x5:
-                        break;
-                    case 0x6:
-                        break;
-                    case 0x7:
-                        break;
-                    case 0xE:
-                        break;
-                    default:
-                        fprintf(stderr, "chip8: invalid opcode\n");
-                        abort();
-                        break;
-                }
+                op_8XYN(opcode);
                 break;
             /* 9XY0 */
             case 0x9000:
@@ -144,8 +127,7 @@ int main(int argc, char **argv) {
                     case 0x1:
                         break;
                     default:
-                        fprintf(stderr, "chip8: invalid opcode\n");
-                        abort();
+                        invalid_opcode(opcode);
                         break;
                 }
                 break;
@@ -173,19 +155,16 @@ int main(int argc, char **argv) {
                             case 0x0060:
                                 break;
                             default:
-                                fprintf(stderr, "chip8: invalid opcode\n");
-                                abort();
+                                invalid_opcode(opcode);
                                 break;
                         }
                     default:
-                        fprintf(stderr, "chip8: invalid opcode\n");
-                        abort();
+                        invalid_opcode(opcode);
                         break;
                 }
                 break;
             default:
-                fprintf(stderr, "chip8: invalid opcode\n");
-                abort();
+                invalid_opcode(opcode);
                 break;
         }
     }

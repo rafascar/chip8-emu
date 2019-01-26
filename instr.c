@@ -80,3 +80,111 @@ void op_5XY0(uint16_t opcode) {
     if (vx == vy)   
         reg_PC = reg_PC + 2;
 }
+
+/* 6XNN     Store number NN in register VX.
+ */
+void op_6XNN(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    uint8_t nn = opcode & 0x00FF;
+
+    reg[x] = nn;
+}
+
+/* 7XNN     Add the value NN to register VX.
+ */
+void op_7XNN(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    uint8_t nn = opcode & 0x00FF;
+
+    reg[x] = reg[x] + nn;
+}
+
+/* 8XYN - 8XY0, 8XY1, 8XY2, 8XY3, 8XY4, 8XY5, 8XY6, 8XY7, 8XYE
+ *
+ * 8XY0     Store the value of register VY in register VX.
+ *
+ * 8XY1     Set VX to VX OR VY.
+ * 8XY2     Set VX to VX AND VY.
+ * 8XY3     Set VX to VX XOR VY.
+ *
+ * 8XY4     Add the value of register VY to register VX
+ *          Set VF to 01 if a carry occurs
+ *          Set VF to 00 if a carry does not occur
+ *
+ * 8XY5     Subtract the value of register VY from register VX
+ *          Set VF to 00 if a borrow occurs
+ *          Set VF to 01 if a borrow does not occur
+ *
+ * 8XY6     Store the value of register VY shifted right one bit in register VX
+ *          Set register VF to the least significant bit prior to the shift
+ *
+ * 8XY7     Set register VX to the value of VY minus VX
+ *          Set VF to 00 if a borrow occurs
+ *          Set VF to 01 if a borrow does not occur
+ *
+ * 8XYE     Store the value of register VY shifted left one bit in register VX
+ *          Set register VF to the most significant bit prior to the shift
+ */
+void op_8XYN(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    uint8_t y  = (opcode & 0x00F0) >> 4;
+
+    /* The 8XY4 opcode needs the previous value of register X to compute
+     * if a carry will occur; hence this declaration here, once it is not
+     * possible to declare inside a switch statement. */
+    uint8_t prevx;
+
+    switch (opcode & 0x000F) {
+        /* 8XY0 VX = VY */
+        case 0x0:
+            reg[x] = reg[y];
+            break;
+        /* 8XY1 VX = VX OR VY */
+        case 0x1:
+            reg[x] = reg[x] | reg[y];
+            break;
+        /* 8XY2 VX = VX AND VY */
+        case 0x2:
+            reg[x] = reg[x] & reg[y];
+            break;
+        /* 8XY3 VX = VX XOR VY */
+        case 0x3:
+            reg[x] = reg[x] ^ reg[y];
+            break;
+        /* 8XY4 VX = VX + VY (carry on VF) */
+        case 0x4:
+            prevx = reg[x];
+            reg[x] = reg[x] + reg[y];
+            /* If carry occurs, the current value of VX is smaller than its
+             * previous value; so we set the carry flag on register VF. */
+            reg[0xF] = (reg[x] < prevx) ? 0x1 : 0x0;
+            break;
+        /* 8XY5 VX = VX - VY (borrow on VF) */
+        case 0x5:
+            /* If the value of VY (subtrahend) is greater than the value of
+             * VX (minuend), a borrow will occur; so we set the borrow flag
+             * on register VF. */
+            reg[0xF] = (reg[y] > reg[x]) ? 0x1 : 0x0;
+            reg[x] = reg[x] - reg[y];
+            break;
+        /* 8XY6 VX = VY >> 1 (LSB on VF) */
+        case 0x6:
+            reg[0xF] = reg[y] & 0x1;
+            reg[x] = reg[y] >> 1;
+            break;
+        /* 8XY7 VX = VY - VX (borrow on VF) */
+        case 0x7:
+            /* Same as 8XY5, but inverted. */
+            reg[0xF] = (reg[x] > reg[y]) ? 0x1 : 0x0;
+            reg[x] = reg[y] - reg[x];
+            break;
+        /* 8XYE VX = VY << 1 (MSB on VF) */
+        case 0xE:
+            reg[0xF] = (reg[y] & 0x80) >> 7;
+            reg[x] = reg[y] << 1;
+            break;
+        default:
+            invalid_opcode(opcode);
+            break;
+    }
+}

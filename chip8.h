@@ -26,3 +26,5 @@ uint16_t sp;
 void     stack_init();
 void     stack_push(uint16_t address);
 uint16_t stack_pop();
+
+void invalid_opcode(uint16_t opcode);

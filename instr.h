@@ -7,4 +7,7 @@ void op_2NNN(uint16_t opcode);
 void op_3XNN(uint16_t opcode);
 void op_4XNN(uint16_t opcode);
 void op_5XY0(uint16_t opcode);
+void op_6XNN(uint16_t opcode);
+void op_7XNN(uint16_t opcode);
+void op_8XYN(uint16_t opcode);
 
