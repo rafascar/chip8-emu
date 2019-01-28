@@ -259,8 +259,8 @@ void op_DXYN(uint16_t opcode) {
     /* original x position */
     uint8_t ox = vx;
 
-    /* Reset register VF before drawing the sprite. If any pixel set
-     * pixel is unset, VF will become 1; it will stay 0 otherwise. */
+    /* Reset register VF before drawing the sprite. If any set pixel
+     * is unset, VF will become 1; it will stay 0 otherwise. */
     reg[0xF] = 0x00;
 
     /* The sprite pixels are XOR'd with those of the screen. */
@@ -283,4 +283,111 @@ void op_DXYN(uint16_t opcode) {
         vx = ox; vy++; 
     }
     print_screen();
+}
+
+/* EX9E     Skip the following instruction if the key corresponding 
+ *          to the hex value currently stored in register VX is pressed.
+ */
+void op_EX9E(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+
+    uint8_t vx = reg[x];
+    if (key[vx] == 1)   
+        reg_PC = reg_PC + 2;
+}
+
+/* EXA1     Skip the following instruction if the key corresponding 
+ *          to the hex value currently stored in register VX is not pressed.
+ */
+void op_EXA1(uint16_t opcode) {
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+
+    uint8_t vx = reg[x];
+    if (key[vx] == 0)   
+        reg_PC = reg_PC + 2;
+}
+
+/* FX07 	Store the current value of the delay timer in register VX.
+ */
+void op_FX07(uint16_t opcode) {
+    // TODO: Needs delay timer.
+    abort();
+}
+
+/* FX0A 	Wait for a keypress and store the result in register VX.
+ */
+void op_FX0A(uint16_t opcode) {
+    // TODO: Needs key input.
+    abort();
+}
+
+/* FX15 	Set the delay timer to the value of register VX.
+ */
+void op_FX15(uint16_t opcode) {
+    // TODO: Needs delay timer.
+    abort();
+}
+
+/* FX18 	Set the sound timer to the value of register VX.
+ */
+void op_FX18(uint16_t opcode) {
+    // TODO: Needs sound timer.
+    abort();
+}
+
+/* FX1E 	Add the value stored in register VX to register I.
+ */
+void op_FX1E(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+
+    reg_I = reg_I + reg[x];
+}
+
+/* FX29 	Set I to the memory address of the sprite data corresponding 
+ *          to the hexadecimal digit stored in register VX.
+ */
+void op_FX29(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    /* Fonts are contiguously stored in memory starting at 
+     * base address FONT and have 5 bytes each. */
+    reg_I = FONT + reg[x] * 5; 
+}
+
+/* FX33     Store the binary-coded decimal equivalent of the value stored 
+ *          in register VX at addresses I, I+1, and I+2.
+ */
+void op_FX33(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t vx = reg[x];
+    /* VX is converted to its decimal equivalent; because data registers are
+     * only 8-bits, there are 3 decimal digits maximum.
+     * The most significant digit is stored in memory adress I, 
+     * the decimal in I+1 and unit in I+2. */
+    memory[reg_I]   = vx / 100;             /* hundreds */
+    memory[reg_I+1] = (vx / 10) % 10;       /* decimal */
+    memory[reg_I+2] = vx % 10;              /* unit */
+}
+
+/* FX55     Store the values of registers V0 to VX inclusive in memory 
+ *          starting at address I.
+ *          I is set to I + X + 1 after operation.
+ */
+void op_FX55(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+
+    int i;
+    for (i = 0; i <= x; i++)
+        memory[reg_I++] = reg[i];
+}
+
+/* FX65     Fill registers V0 to VX inclusive with the values stored in memory 
+ *          starting at address I.
+ *          I is set to I + X + 1 after operation.
+ */
+void op_FX65(uint16_t opcode) {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+
+    int i;
+    for (i = 0; i <= x; i++)
+        reg[i] = memory[reg_I++];
 }

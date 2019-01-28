@@ -7,6 +7,9 @@
 /* callstack definitions */
 #define LEVELS  12
 
+/* base address for storing hex fonts */
+#define FONT    0x000
+
 /* 4K byte-addressable memory */
 uint8_t memory[0xFFF];
 
@@ -19,6 +22,9 @@ uint16_t reg_PC;
 
 /* 64x32 monochrome framebuffer */
 uint8_t frame_buffer[WIDTH*HEIGHT];
+
+/* input has 16 keys */
+uint8_t key[16];
 
 /* 12 levels call stack and stack pointer */
 uint16_t stack[LEVELS];

@@ -15,13 +15,14 @@ void cpu_reset(FILE *file) {
     reg_I = 0;                      /* reset address register */
     reg_PC = 0x200;                 /* programs start at 0x200 */
     stack_init();                   /* reset stack */
+    memset(key, 0, sizeof(key));    /* reset input keys */
 
     srand(time(NULL));               /* set random seed for rng */
 
-    /* All hexadecimal digits (0 - 9, A - F) have corresponding sprite 
+    /* All hexadecimal digits (0-9, A-F) have corresponding sprite 
      * data already stored in the memory of the interpreter.
      * We chose to store it beggining in address 0x000. */
-    memcpy(memory, digits, sizeof(digits));
+    memcpy(&memory[FONT], digits, sizeof(digits));
 
     /* load image file to memory */
     uint8_t *p = &memory[reg_PC];      
@@ -36,9 +37,15 @@ void invalid_opcode(uint16_t opcode) {
     
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "usage: ./chip8 file\n");
+        fprintf(stderr, "usage: ./chip8 file nop6\n");
         exit(1);
     }
+
+    /* DEBUGGING: Number of opcodes to fetch and execute. */
+    int nops = 0;
+    if (argc == 3)
+        nops = atoi(argv[2]);
+
 
     /* get image file from path in arguments and reset cpu */
     FILE *file = fopen(argv[1], "r");
@@ -50,9 +57,9 @@ int main(int argc, char **argv) {
     fclose(file);
 
     /* begin emulation loop */
-    int running = 1;
+    //int running = 1;
     //while (running) { 
-    while (running--) {     /* debugging */
+    while (nops--) {     /* debugging */
         /* Fetch opcode.
          * CHIP-8 opcodes are 2-bytes, but it has a byte-addressable memory
          * thus, we need to get two consecutive bytes to fech a single 
@@ -135,8 +142,10 @@ int main(int argc, char **argv) {
             case 0xE000:
                 switch (opcode & 0x000F) {
                     case 0xE:
+                        op_EX9E(opcode);
                         break;
                     case 0x1:
+                        op_EXA1(opcode);
                         break;
                     default:
                         invalid_opcode(opcode);
@@ -147,29 +156,39 @@ int main(int argc, char **argv) {
             case 0xF000:
                 switch (opcode & 0x000F) {
                     case 0x0007:
+                        op_FX07(opcode);
                         break;
                     case 0x000A:
+                        op_FX0A(opcode);
                         break;
                     case 0x0008:
+                        op_FX18(opcode);
                         break;
                     case 0x000E:
+                        op_FX1E(opcode);
                         break;
                     case 0x0009:
+                        op_FX29(opcode);
                         break;
                     case 0x0003:
+                        op_FX33(opcode);
                         break;
                     case 0x0005:
                         switch (opcode & 0x00F0) {
                             case 0x0010:
+                                op_FX15(opcode);
                                 break;
                             case 0x0050:
+                                op_FX55(opcode);
                                 break;
                             case 0x0060:
+                                op_FX65(opcode);
                                 break;
                             default:
                                 invalid_opcode(opcode);
                                 break;
-                        }
+                       }
+                        break;
                     default:
                         invalid_opcode(opcode);
                         break;
