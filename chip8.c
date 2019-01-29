@@ -4,10 +4,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "chip8.h"
 #include "instr.h"
 #include "digits.h"
+
+#include "debug.c"
+
+double time_getseconds() {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+    return (double) ((double)t.tv_sec + (double)t.tv_nsec / 1e9);
+}
 
 /* Reset CPU registers and load image file to memory */
 void cpu_reset(FILE *file) {
@@ -16,6 +25,8 @@ void cpu_reset(FILE *file) {
     reg_PC = 0x200;                 /* programs start at 0x200 */
     stack_init();                   /* reset stack */
     memset(key, 0, sizeof(key));    /* reset input keys */
+    timer_delay = 0;                /* reset delay timer */
+    timer_sound = 0;                /* reset sound timer */
 
     srand(time(NULL));               /* set random seed for rng */
 
@@ -34,32 +45,12 @@ void invalid_opcode(uint16_t opcode) {
     fprintf(stderr, "chip8: invalid opcode %04x\n", opcode);
     abort();
 }
-    
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        fprintf(stderr, "usage: ./chip8 file nop6\n");
-        exit(1);
-    }
 
-    /* DEBUGGING: Number of opcodes to fetch and execute. */
-    int nops = 0;
-    if (argc == 3)
-        nops = atoi(argv[2]);
-
-
-    /* get image file from path in arguments and reset cpu */
-    FILE *file = fopen(argv[1], "r");
-    if (!file) {
-        fprintf(stderr, "chip8: error opening file (%s)\n", argv[1]);
-        exit(1);
-    }
-    cpu_reset(file);
-    fclose(file);
-
-    /* begin emulation loop */
-    //int running = 1;
-    //while (running) { 
-    while (nops--) {     /* debugging */
+/* Update the CPU state. 
+ * It executes "cycles" number of instructions. 
+ */
+void cpu_update(int cycles) {
+    while (cycles--) {     
         /* Fetch opcode.
          * CHIP-8 opcodes are 2-bytes, but it has a byte-addressable memory
          * thus, we need to get two consecutive bytes to fech a single 
@@ -68,6 +59,7 @@ int main(int argc, char **argv) {
          * left and OR'd with the least significant to obtain the full opcode. */
         uint16_t opcode = (uint16_t)memory[reg_PC] << 8 | memory[reg_PC+1];  
         reg_PC = reg_PC + 2;
+
         /* The first hexadecimal digit of an opcode dictates which instruction 
          * needs to be executed; in some cases, the last hex digit is also 
          * needed. */
@@ -198,6 +190,64 @@ int main(int argc, char **argv) {
                 invalid_opcode(opcode);
                 break;
         }
+    }
+}
+    
+void render() {
+    print_screen();
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        fprintf(stderr, "usage: ./chip8 file nop6\n");
+        exit(1);
+    }
+
+    /* DEBUGGING: Number of opcodes to fetch and execute. */
+    int cycles = 0;
+    if (argc == 3)
+        cycles = atoi(argv[2]);
+
+    /* get image file from path in arguments and reset cpu */
+    FILE *file = fopen(argv[1], "r");
+    if (!file) {
+        fprintf(stderr, "chip8: error opening file (%s)\n", argv[1]);
+        exit(1);
+    }
+    cpu_reset(file);
+    fclose(file);
+
+    /* begin emulation loop */
+    int running = 1;
+    while (running) { 
+        /* Get the time at the beginning of the loop. It will be used later
+         * to slow it down to 60Hz */
+        double start = time_getseconds();
+
+        /* Since we force the emulation loop to run at (approximately) 60Hz,
+         * we can use it to  update the timers (decrement if less than zero). */
+        if (timer_delay > 0) timer_delay--; 
+        if (timer_sound > 0) timer_sound--;
+
+        /* Update the CPU state by "cycles" instructions. This value is arbitrary
+         * and must be fiddled with to achieve the right emulation speed.
+         * The cycles value is the number of instructions that will execute
+         * every 1/60 seconds (16 ms). */
+        cpu_update(cycles);
+
+        /* TODO: Render the screen. */
+        render();
+
+        /* Force this loop to run at 60Hz (once every 16ms).
+         * It does this by sleeping for the time remaining to complete 1/60 seconds
+         * since the beginning of the loop; if it took more than 1/60s to run until
+         * now: abort.
+         * Not a very accurate implementation, but shall do the trick for now. */
+        struct timespec rqtp = {
+            .tv_sec = 0,
+            .tv_nsec = (start + 1.0/60 - time_getseconds()) * 1e9 
+        };
+        nanosleep(&rqtp, NULL);
     }
 
     return 0;

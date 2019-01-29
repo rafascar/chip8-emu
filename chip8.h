@@ -20,6 +20,10 @@ uint16_t reg_I;
 /* 16-bit program counter PC */
 uint16_t reg_PC;
 
+/* 8-bit timers */
+uint8_t timer_delay;
+uint8_t timer_sound;
+
 /* 64x32 monochrome framebuffer */
 uint8_t frame_buffer[WIDTH*HEIGHT];
 

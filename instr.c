@@ -11,7 +11,6 @@
 #include <assert.h>
 
 #include "instr.h"
-#include "debug.c"
 
 /* 00E0     Clear the screen.
  */
@@ -226,7 +225,6 @@ void op_CXNN(uint16_t opcode) {
      * ANDs this value with a byte mask in order to reduce the size of
      * the set of random numbers capable of being returned from this func. */
     reg[x] = (uint8_t)(rand() % 0xFF) & nn;
-    print_registers();
 }
 
 /* Helper functions to draw on screen */
@@ -282,7 +280,6 @@ void op_DXYN(uint16_t opcode) {
         /* Next line: reset x position and advance y position */ 
         vx = ox; vy++; 
     }
-    print_screen();
 }
 
 /* EX9E     Skip the following instruction if the key corresponding 
@@ -310,8 +307,8 @@ void op_EXA1(uint16_t opcode) {
 /* FX07 	Store the current value of the delay timer in register VX.
  */
 void op_FX07(uint16_t opcode) {
-    // TODO: Needs delay timer.
-    abort();
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    reg[x] = timer_delay;
 }
 
 /* FX0A 	Wait for a keypress and store the result in register VX.
@@ -324,15 +321,15 @@ void op_FX0A(uint16_t opcode) {
 /* FX15 	Set the delay timer to the value of register VX.
  */
 void op_FX15(uint16_t opcode) {
-    // TODO: Needs delay timer.
-    abort();
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    timer_delay = reg[x];
 }
 
 /* FX18 	Set the sound timer to the value of register VX.
  */
 void op_FX18(uint16_t opcode) {
-    // TODO: Needs sound timer.
-    abort();
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+    timer_sound = reg[x];
 }
 
 /* FX1E 	Add the value stored in register VX to register I.
