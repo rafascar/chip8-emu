@@ -162,25 +162,36 @@ void op_8XYN(uint16_t opcode) {
         case 0x5:
             /* If the value of VY (subtrahend) is greater than the value of
              * VX (minuend), a borrow will occur; so we set the borrow flag
-             * on register VF. */
-            reg[0xF] = (reg[y] > reg[x]) ? 0x1 : 0x0;
+             * to 0 on register VF. */
+            reg[0xF] = (reg[y] > reg[x]) ? 0x0 : 0x1;
             reg[x] = reg[x] - reg[y];
             break;
         /* 8XY6 VX = VY >> 1 (LSB on VF) */
         case 0x6:
-            reg[0xF] = reg[y] & 0x1;
-            reg[x] = reg[y] >> 1;
+            /* Note: in some implementations, it simply ignores the Y register
+             * and do all operations on the X register.
+             * This implementation is wrong according to the CHIP-8 specification
+             * but some games (and test roms) were coded this way. */
+            reg[0xF] = reg[x] & 0x1;
+            reg[x] = reg[x] >> 1;
+
+            //reg[0xF] = reg[y] & 0x1;    /* LSB */
+            //reg[x] = reg[y] >> 1;
             break;
         /* 8XY7 VX = VY - VX (borrow on VF) */
         case 0x7:
-            /* Same as 8XY5, but inverted. */
-            reg[0xF] = (reg[x] > reg[y]) ? 0x1 : 0x0;
+            /* Same as 8XY5, but inverted minuend<->subtrahend. */
+            reg[0xF] = (reg[x] > reg[y]) ? 0x0 : 0x1;
             reg[x] = reg[y] - reg[x];
             break;
         /* 8XYE VX = VY << 1 (MSB on VF) */
         case 0xE:
-            reg[0xF] = (reg[y] & 0x80) >> 7;
-            reg[x] = reg[y] << 1;
+            /* See "Note" above. */
+            reg[0xF] = reg[x] >> 7;
+            reg[x]   = reg[x] << 1;
+
+            //reg[0xF] = reg[y] >> 7;   /* MSB */
+            //reg[x]   = reg[y] << 1;
             break;
         default:
             invalid_opcode(opcode);
@@ -374,7 +385,9 @@ void op_FX55(uint16_t opcode) {
 
     int i;
     for (i = 0; i <= x; i++)
-        memory[reg_I++] = reg[i];
+        memory[reg_I+i] = reg[i];
+
+    reg_I = reg_I + x + 1;
 }
 
 /* FX65     Fill registers V0 to VX inclusive with the values stored in memory 
@@ -386,5 +399,7 @@ void op_FX65(uint16_t opcode) {
 
     int i;
     for (i = 0; i <= x; i++)
-        reg[i] = memory[reg_I++];
+        reg[i] = memory[reg_I+i];
+
+    reg_I = reg_I + x + 1;
 }
