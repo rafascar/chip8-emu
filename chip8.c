@@ -46,6 +46,22 @@ void invalid_opcode(uint16_t opcode) {
     abort();
 }
 
+void init_sdl() {
+    /* Initialize SDL with VIDEO subsystem. */
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "chip8: SDL_Init error: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    /* Create a 64x32 (* FACTOR) borderless window at position (10,30) */
+    window = SDL_CreateWindow("CHIP-8 Emulator",
+            10, 30, WIDTH * FACTOR, HEIGHT * FACTOR,
+            SDL_WINDOW_BORDERLESS);
+
+    /* Initialize the renderer that will draw to the window. */
+    renderer = SDL_CreateRenderer(window, -1, 0);
+}
+
 /* Update the CPU state. 
  * It executes "cycles" number of instructions. 
  */
@@ -142,7 +158,28 @@ void cpu_update(int cycles) {
 }
     
 void render() {
-    print_screen();
+    /* Set the color to BLACK for clearing the screen */
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    /* Now draw the pixels from frame_buffer to the screen;
+     * as the screen is resized by FACTOR, each pixel is drawn
+     * as a rectangle with size (w, h) = (FACTOR, FACTOR),
+     * filled with color WHITE. */
+    SDL_Rect pixel = { .w = FACTOR, .h = FACTOR }; 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    int x, y;
+    for (x = 0; x < WIDTH; x++) {
+        for (y = 0; y < WIDTH; y++) {
+            if (get_pixel(x, y) == 1) {
+                pixel.x = x * FACTOR;
+                pixel.y = y * FACTOR;
+                SDL_RenderFillRect(renderer, &pixel);
+            }
+        }
+    }
+    /* Update the screen once all the pixels are rendered. */
+    SDL_RenderPresent(renderer);
 }
 
 int main(int argc, char **argv) {
@@ -151,7 +188,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    /* DEBUGGING: Number of opcodes to fetch and execute. */
+    /* Number of opcodes to fetch and execute in each emulation loop. */
     int cycles = 0;
     if (argc == 3)
         cycles = atoi(argv[2]);
@@ -164,6 +201,9 @@ int main(int argc, char **argv) {
     }
     cpu_reset(file);
     fclose(file);
+
+    /* Initialize SDL Window and Renderer. */
+    init_sdl();
 
     /* begin emulation loop */
     int running = 1;
@@ -183,7 +223,7 @@ int main(int argc, char **argv) {
          * every 1/60 seconds (16 ms). */
         cpu_update(cycles);
 
-        /* TODO: Render the screen. */
+        /* Render the frame_buffer to screen. */
         render();
 
         /* Force this loop to run at 60Hz (once every 16ms).

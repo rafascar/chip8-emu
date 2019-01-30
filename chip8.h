@@ -1,8 +1,10 @@
 #include <stdlib.h>
+#include <SDL.h>
 
 /* screen dimensions */
 #define WIDTH   64
 #define HEIGHT  32
+#define FACTOR  10      // draw screen as 640x320 window
 
 /* callstack definitions */
 #define LEVELS  12
@@ -26,6 +28,10 @@ uint8_t timer_sound;
 
 /* 64x32 monochrome framebuffer */
 uint8_t frame_buffer[WIDTH*HEIGHT];
+
+/* SDL window and renderer handlers */
+SDL_Window *window;
+SDL_Renderer *renderer;
 
 /* input has 16 keys */
 uint8_t key[16];

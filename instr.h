@@ -1,5 +1,6 @@
 #include "chip8.h"
 
+/* Instructions */
 void op_00E0(uint16_t opcode);
 void op_00EE(uint16_t opcode);
 void op_1NNN(uint16_t opcode);
@@ -26,3 +27,7 @@ void op_FX29(uint16_t opcode);
 void op_FX33(uint16_t opcode);
 void op_FX55(uint16_t opcode);
 void op_FX65(uint16_t opcode);
+
+/* Helper functions to draw on screen */
+uint8_t xor_pixel(uint8_t x, uint8_t y, uint8_t p);
+uint8_t get_pixel(uint8_t x, uint8_t y); 
