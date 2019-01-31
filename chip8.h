@@ -34,7 +34,7 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 
 /* input has 16 keys */
-uint8_t key[16];
+uint8_t keys[16];
 
 /* 12 levels call stack and stack pointer */
 uint16_t stack[LEVELS];

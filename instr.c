@@ -300,7 +300,7 @@ void op_EX9E(uint16_t opcode) {
     uint8_t x  = (opcode & 0x0F00) >> 8;
 
     uint8_t vx = reg[x];
-    if (key[vx] == 1)   
+    if (keys[vx] == 1)   
         reg_PC = reg_PC + 2;
 }
 
@@ -311,7 +311,7 @@ void op_EXA1(uint16_t opcode) {
     uint8_t x  = (opcode & 0x0F00) >> 8;
 
     uint8_t vx = reg[x];
-    if (key[vx] == 0)   
+    if (keys[vx] == 0)   
         reg_PC = reg_PC + 2;
 }
 

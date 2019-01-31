@@ -24,7 +24,7 @@ void cpu_reset(FILE *file) {
     reg_I = 0;                      /* reset address register */
     reg_PC = 0x200;                 /* programs start at 0x200 */
     stack_init();                   /* reset stack */
-    memset(key, 0, sizeof(key));    /* reset input keys */
+    memset(keys, 0, sizeof(keys));  /* reset input keys */
     timer_delay = 0;                /* reset delay timer */
     timer_sound = 0;                /* reset sound timer */
 
@@ -61,6 +61,7 @@ void init_sdl() {
     /* Initialize the renderer that will draw to the window. */
     renderer = SDL_CreateRenderer(window, -1, 0);
 }
+
 
 /* Update the CPU state. 
  * It executes "cycles" number of instructions. 
@@ -182,6 +183,34 @@ void render() {
     SDL_RenderPresent(renderer);
 }
 
+/* TODO: NOT WORKING */
+void keys_update() {
+    /* Get a snapshot of the current state of the keyboard
+     * and update keys[16] with it. */
+    const uint8_t *keyboard_state = SDL_GetKeyboardState(NULL);
+
+    /* 1 2 3 C                    1 2 3 4 */
+    keys[1]   = keyboard_state[SDL_SCANCODE_1];
+    keys[2]   = keyboard_state[SDL_SCANCODE_2];
+    keys[3]   = keyboard_state[SDL_SCANCODE_3];
+    keys[0xC] = keyboard_state[SDL_SCANCODE_4];
+    /* 4 5 6 D                    Q W E R */
+    keys[4]   = keyboard_state[SDL_SCANCODE_Q];
+    keys[5]   = keyboard_state[SDL_SCANCODE_W];
+    keys[6]   = keyboard_state[SDL_SCANCODE_E];
+    keys[0xD] = keyboard_state[SDL_SCANCODE_R];
+    /* 7 8 9 E                    A S D F */
+    keys[7]   = keyboard_state[SDL_SCANCODE_A];
+    keys[8]   = keyboard_state[SDL_SCANCODE_S];
+    keys[9]   = keyboard_state[SDL_SCANCODE_D];
+    keys[0xE] = keyboard_state[SDL_SCANCODE_F];
+    /* A 0 B F                    Z X C V */
+    keys[0xA] = keyboard_state[SDL_SCANCODE_Z];
+    keys[0]   = keyboard_state[SDL_SCANCODE_X];
+    keys[0xB] = keyboard_state[SDL_SCANCODE_C];
+    keys[0xF] = keyboard_state[SDL_SCANCODE_V];
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: ./chip8 file nop6\n");
@@ -211,7 +240,10 @@ int main(int argc, char **argv) {
         /* Get the time at the beginning of the loop. It will be used later
          * to slow it down to 60Hz */
         double start = time_getseconds();
-
+    
+        /* Reset all input keys; if any of them is set, it will be handled
+         * by the event handler. */
+        memset(keys, 0, sizeof(keys));
         /* Handle events on the event queue. It keeps processing the events on
          * the event queue until its empty. */
         SDL_Event e;
@@ -223,6 +255,10 @@ int main(int argc, char **argv) {
                 running = 0;
             }
         }
+
+        /* Get keyboard state and update keys[16] array that is used by the 
+         * instructions to know about the keyboard input. */
+        keys_update();
 
         /* Since we force the emulation loop to run at (approximately) 60Hz,
          * we can use it to  update the timers (decrement if less than zero). */
