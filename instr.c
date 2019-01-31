@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include "instr.h"
+#include "debug.c"
 
 /* 00E0     Clear the screen.
  */
@@ -322,11 +323,33 @@ void op_FX07(uint16_t opcode) {
     reg[x] = timer_delay;
 }
 
+/* Helper function for instruction FX0A */
+int get_keypress() {
+    /* Check if at least one key is pressed. The key registered
+     * to register VX will be the first one in ascending order (0-F)
+     * if multiple keys are pressed at the same time. */
+    int k;
+    for (k = 0; k < sizeof(keys); k++) {
+        if (keys[k] > 0) {
+            return k;
+        }
+    }
+    return -1;
+}
+
 /* FX0A 	Wait for a keypress and store the result in register VX.
  */
 void op_FX0A(uint16_t opcode) {
-    // TODO: Needs key input.
-    abort();
+    uint8_t x  = (opcode & 0x0F00) >> 8;
+
+    /* If no keys are pressed, return the PC register to this same
+     * instruction. This is our way to implement "waiting for a keypress" */
+    int key = get_keypress();
+    if (key > 0) {
+        reg[x] = key;
+    } else {
+        reg_PC = reg_PC - 2;
+    }
 }
 
 /* FX15 	Set the delay timer to the value of register VX.

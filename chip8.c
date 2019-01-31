@@ -10,7 +10,6 @@
 #include "instr.h"
 #include "digits.h"
 
-#include "debug.c"
 
 double time_getseconds() {
     struct timespec t;
@@ -183,7 +182,6 @@ void render() {
     SDL_RenderPresent(renderer);
 }
 
-/* TODO: NOT WORKING */
 void keys_update() {
     /* Get a snapshot of the current state of the keyboard
      * and update keys[16] with it. */
@@ -218,9 +216,9 @@ int main(int argc, char **argv) {
     }
 
     /* Number of opcodes to fetch and execute in each emulation loop. */
-    int cycles = 0;
+    int cycles_per_frame = 0;
     if (argc == 3)
-        cycles = atoi(argv[2]);
+        cycles_per_frame = atoi(argv[2]);
 
     /* get image file from path in arguments and reset cpu */
     FILE *file = fopen(argv[1], "r");
@@ -269,7 +267,7 @@ int main(int argc, char **argv) {
          * and must be fiddled with to achieve the right emulation speed.
          * The cycles value is the number of instructions that will execute
          * every 1/60 seconds (16 ms). */
-        cpu_update(cycles);
+        cpu_update(cycles_per_frame);
 
         /* Render the frame_buffer to screen. */
         render();
