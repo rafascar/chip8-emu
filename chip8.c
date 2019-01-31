@@ -212,6 +212,18 @@ int main(int argc, char **argv) {
          * to slow it down to 60Hz */
         double start = time_getseconds();
 
+        /* Handle events on the event queue. It keeps processing the events on
+         * the event queue until its empty. */
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            /* SDL_QUITs are generated for a variety of reasons.
+             * In MacOS it will be triggered by CMD+Q; in POSIX it will 
+             * handle SIGINT and SIGTERM if they are not handled elsewhere. */
+            if (e.type == SDL_QUIT) {
+                running = 0;
+            }
+        }
+
         /* Since we force the emulation loop to run at (approximately) 60Hz,
          * we can use it to  update the timers (decrement if less than zero). */
         if (timer_delay > 0) timer_delay--; 
