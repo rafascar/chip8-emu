@@ -5,6 +5,10 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 
 #include "chip8.h"
 #include "instr.h"
@@ -45,9 +49,32 @@ void invalid_opcode(uint16_t opcode) {
     abort();
 }
 
+SDL_AudioSpec audio_desired, audio_obtained;
+SDL_AudioDeviceID audio_devid;
+
+int samples_per_second = 0;     // obtained sample rate to be filled after opening audio device
+int sample_nr = 0;              // used to keep track of the current sample
+
+
+/* userdata: application-specific paremeter saved in userdata field
+ * stream  : pointer to the audio data buffer
+ * len     : lenfgt of that buffer in bytes
+ */
+void mix_audio(void* userdata, uint8_t *stream, int len) {
+    int i;
+    for (i = 0; i < len; i++, sample_nr++) {
+        /* Calculate the time for the next sample. */ 
+        double t = (double)sample_nr / (double)samples_per_second; 
+        /* Calculate a single sample for time t. */
+        int8_t sample = 127 * cos(2.0 * M_PI * 440.0 * t);  // 440Hz sine wave
+        /* Fill the audio buffer with the calculated sample. */
+        stream[i] = sample;
+    }
+}
+
 void init_sdl() {
-    /* Initialize SDL with VIDEO subsystem. */
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    /* Initialize SDL with VIDEO and AUDIO subsystems. */
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         fprintf(stderr, "chip8: SDL_Init error: %s\n", SDL_GetError());
         exit(1);
     }
@@ -59,6 +86,21 @@ void init_sdl() {
 
     /* Initialize the renderer that will draw to the window. */
     renderer = SDL_CreateRenderer(window, -1, 0);
+
+    /* Configure audio parameters. */
+    audio_desired.freq = 44100;         // samples per second 44,100 Hz
+    audio_desired.format = AUDIO_S8;    // 8-bit bit depth (-128 to 127)
+    audio_desired.channels = 1;         // mono
+    audio_desired.samples = 4096;       // size of the audio buffer in sample frames
+    audio_desired.callback = mix_audio;
+    audio_desired.userdata = NULL;
+
+    audio_devid = SDL_OpenAudioDevice(NULL, 0, &audio_desired, &audio_obtained, 0);
+    if (audio_devid == 0) {
+        fprintf(stderr, "chip8: SDL_OpenAudioDevice error %s\n", SDL_GetError());
+        exit(1);
+    }
+    samples_per_second = audio_obtained.freq;
 }
 
 
@@ -268,6 +310,11 @@ int main(int argc, char **argv) {
          * The cycles value is the number of instructions that will execute
          * every 1/60 seconds (16 ms). */
         cpu_update(cycles_per_frame);
+
+        /* SDL_PauseAudioDevice(devid, 0) will start playing; non-zero will pause.
+         * So we can pass directly the negated timer_sound value: while it's higher
+         * than 0 will continue playing, and once it reaches 0 it will pause. */ 
+        SDL_PauseAudioDevice(audio_devid, !timer_sound);
 
         /* Render the frame_buffer to screen. */
         render();
